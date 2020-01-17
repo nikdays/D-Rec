@@ -1,0 +1,82 @@
+#!/usr/bin/python3
+import subprocess,sys,re,colorama
+from colorama import Fore,Back,Style
+def logo():
+        print(Fore.WHITE)
+        print(Back.BLACK)
+        print('''
+▓█████▄  ██▀███  ▓█████  ▄████▄  
+▒██▀ ██▌▓██ ▒ ██▒▓█   ▀ ▒██▀ ▀█  
+░██   █▌▓██ ░▄█ ▒▒███   ▒▓█    ▄ 
+░▓█▄   ▌▒██▀▀█▄  ▒▓█  ▄ ▒▓▓▄ ▄██▒
+░▒████▓ ░██▓ ▒██▒░▒████▒▒ ▓███▀ ░
+ ▒▒▓  ▒ ░ ▒▓ ░▒▓░░░ ▒░ ░░ ░▒ ▒  ░
+ ░ ▒  ▒   ░▒ ░ ▒░ ░ ░  ░  ░  ▒   
+ ░ ░  ░   ░░   ░    ░   ░        
+   ░       ░        ░  ░░ ░      
+ ░                      ░        
+''')
+        print(Style.RESET_ALL)
+        print(Back.BLACK)
+        print(Fore.GREEN+Style.BRIGHT+'1. Forward Lookup \n2. Reverse Lookup')
+def fwdlkp(domainname):
+	file=open("dnsrec","w")
+	f=open("myfile","r")
+	lines=f.readlines()
+	f.close()
+	for i in lines:
+		s=i.strip("\n")
+		j= s+"."+domainname
+		abc=subprocess.check_output('host ' + str(j) +'| grep "has address" | cut -d " " -f4', shell=True)
+		abc=abc.decode('utf-8')
+		found=re.search(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}',abc)
+		if found:
+			print(Fore.GREEN+"ip for "+str(j)+found.group())
+			print("================================================================================")
+			file.write(Fore.GREEN+"[DNS RECORD FOUND]"+"\t------------------\t"+str(j)+" "+found.group()+ " \n")
+		elif found==None:
+			print(Fore.RED+str(j)+ ' has nxdomain')
+			print("================================================================================")
+			file.write(Fore.RED+"[----NXDOMAIN----]"+"\t------------------\t"+str(j)+"\n")
+		else:
+			print(Fore.RED+'some unexpected error occured')
+	file.close()
+def revlkp(ip):
+	for i in range(1,255):
+		j=ip+"."+str(i)
+		f=open("dnsrec","a")
+		abc=subprocess.Popen(["host",j],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+		stdout,stderr = abc.communicate()
+		abc=stdout.decode("utf-8")
+		found=re.search(r'NXDOMAIN',abc)
+		abc=abc.split()
+		if found:
+			print(Fore.RED+j+"\t------\t"+"NXDOMAIN")
+			f.write(Fore.RED"[  NXDOMAIN   ]"+"---"+"IP "+j+" NOT FOUND\n")
+		elif found==None:
+			print(Fore.GREEN+j+"\t------\t"+abc[-1])
+			f.write("[RECORND FOUND]"+"---"+"IP "+j+" BELONGS TO"+ abc[-1]+"\n")
+		f.close()
+def main():
+	logo()
+	try:
+		a=input(Fore.RED+"CHOOSE OPTION>")
+		if a.isdigit():
+			if int(a)==1:
+				domainname=input(Fore.GREEN+"Give a domain name (eg:google.com)> ")
+				try:
+					fwdlkp(domainname)
+				except KeyboardInterrupt:
+					print(Fore.YELLOW+"Quiting.....for results check dnsrec file in pwd")
+			elif int(a)==2:
+				ip=input(Fore.GREEN+"Give Class C ip address(X.X.X)")
+				try:
+					revlkp(ip)
+				except KeyboardInterrupt:
+					print(Fore.YELLOW+"Quiting.....for results check dnsrec file in pwd")
+	except KeyboardInterrupt:
+		print(Fore.YELLOW+"Quiting.....for results check dnsrec file in pwd")
+	except:
+		print(Fore.RED+'SOME UNKNOWN ERROR!!!')
+if __name__=='__main__':
+	main()
